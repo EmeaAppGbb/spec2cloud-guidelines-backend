@@ -74,7 +74,9 @@
 ### 6. Agents Integration
 
 - **Always use AI Toolkit best practices**: Before implementing agent code, use `#aitk-get_agent_code_gen_best_practices` to retrieve the latest best practices and guidance for Microsoft Agent Framework code generation
+- **Always use Microsoft Docs MCP server**: Search for code samples and snippets when working with Microsoft Agents Framework using the Microsoft Docs MCP server (`microsoft_code_sample_search` tool) to ensure you're using the latest patterns and examples
 - **Required NuGet packages**: Install `Microsoft.Agents.AI`, `Microsoft.Agents.AI.OpenAI`, `Microsoft.Extensions.AI`, and `Microsoft.Extensions.AI.OpenAI` packages
+- **Prefer Aspire's integration for AI Inference clients**: When available, always use Aspire's integration for AI Inference clients via `.AddChatClient()` or similar Aspire hosting integrations for automatic configuration and service discovery
 - **Use `ChatClientAgent` for all agents**: Wrap all agents using `ChatClientAgent` from `Microsoft.Agents.AI` with proper agent descriptions, names, and instructions
 - **Agent construction pattern**: Create agents with `new ChatClientAgent(chatClient, instructions: "...", name: "AgentName")` in service constructors
 - **Use `AIAgent.RunAsync()` pattern**: Call agents using `await _agent.RunAsync(prompt)` instead of direct `IChatClient` calls. Never use `IChatClient` directly for agent operations
@@ -116,6 +118,8 @@
 ## .NET Aspire Orchestration Guidelines
 
 .NET Aspire is the local development orchestrator for cloud-native distributed applications. It simplifies service dependencies, configuration, and observability during development.
+
+**Always consult Microsoft Docs MCP server**: Use the Microsoft Docs MCP server (`microsoft_code_sample_search` and `microsoft_docs_search` tools) to retrieve the latest code samples, snippets, best practices, and integrations for .NET Aspire before implementing or modifying Aspire configurations.
 
 ### 1. AppHost Project Structure
 
