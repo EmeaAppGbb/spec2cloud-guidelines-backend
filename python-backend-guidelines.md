@@ -1,5 +1,9 @@
 # Python Backend Guidelines
 
+> **📚 IMPORTANT: Code Examples Policy**  
+> **ALWAYS use Context7 MCP server (https://github.com/upstash/context7) to retrieve up-to-date code snippets.**  
+> This document provides principles, patterns, and architectural guidance. For actual implementation code, query Context7 or Microsoft Docs MCP server to ensure you're using the latest library versions and best practices.
+
 ## Guiding Principles
 
 - **Type-safe Python**: Strong typing via Pydantic models and type hints. Use mypy for static type checking.
@@ -65,45 +69,29 @@
 
 ### 2. Type Safety & Python Best Practices
 
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `pydantic`, `mypy`, or `python type hints`
+
+**Key Practices:**
 - **Type hints everywhere**: Use type hints for all function signatures, variables, and class attributes
-  - Use `from typing import Optional, List, Dict, Any, Union` for Python < 3.10
-  - Use `str | None, list[str], dict[str, int]` syntax for Python 3.10+
 - **Pydantic models**: Use Pydantic V2 `BaseModel` for all DTOs, request/response schemas, and configuration
   - Enable `model_config = ConfigDict(frozen=True)` for immutable models
   - Use `Field()` for validation, descriptions, examples, and constraints
   - Leverage `@field_validator` and `@model_validator` for custom validation
 - **Static type checking**: Run mypy in strict mode as part of CI/CD
-  ```ini
-  # mypy.ini or pyproject.toml [tool.mypy]
-  python_version = "3.11"
-  warn_return_any = true
-  warn_unused_configs = true
-  disallow_untyped_defs = true
-  disallow_any_generics = true
-  disallow_subclassing_any = true
-  disallow_untyped_calls = true
-  disallow_incomplete_defs = true
-  check_untyped_defs = true
-  no_implicit_optional = true
-  warn_redundant_casts = true
-  warn_unused_ignores = true
-  warn_no_return = true
-  ```
 - **Dataclasses**: Use `dataclasses` for simple data containers when Pydantic validation isn't needed
 - **Enums**: Use `enum.Enum` or Pydantic's `Field(discriminator=...)` for type-safe choices
 
 ### 3. Async Excellence & Best Practices
 
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `asyncio`, `async python`, or `fastapi async`
+
+**Key Practices:**
 - **All I/O operations must be async**: Use `async def` and `await` for database, HTTP, file I/O
 - **Never block the event loop**: Avoid blocking calls like `time.sleep()`, use `asyncio.sleep()` instead
 - **Use async Azure SDK clients**: Import from `.aio` modules (e.g., `from azure.cosmos.aio import CosmosClient`)
 - **Async context managers**: Always use `async with` for resource management
-  ```python
-  async with CosmosClient(endpoint, credential=credential) as client:
-      database = client.get_database_client("mydb")
-      async for item in container.query_items(query):
-          process(item)
-  ```
 - **Concurrency patterns**:
   - Use `asyncio.gather()` for concurrent operations
   - Use `asyncio.Semaphore()` to limit concurrency
@@ -113,129 +101,23 @@
 
 ### 4. FastAPI Application Structure
 
-#### Application Initialization (`main.py`)
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `/tiangolo/fastapi` or `fastapi lifespan middleware`
 
-```python
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-
-from app.core.config import settings
-from app.routers import items, users
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: Initialize database clients, agent services
-    await initialize_services()
-    yield
-    # Shutdown: Close connections, cleanup resources
-    await cleanup_services()
-
-
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    lifespan=lifespan,
-)
-
-# Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Include routers
-app.include_router(items.router, prefix=f"{settings.API_V1_STR}/items", tags=["items"])
-app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
-```
-
-#### Configuration with Pydantic Settings
-
-```python
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from functools import lru_cache
-
-
-class Settings(BaseSettings):
-    PROJECT_NAME: str = "My API"
-    VERSION: str = "1.0.0"
-    API_V1_STR: str = "/api/v1"
-    
-    # Azure Cosmos DB
-    COSMOS_ENDPOINT: str
-    COSMOS_KEY: str
-    COSMOS_DATABASE_NAME: str
-    
-    # Azure OpenAI
-    AZURE_OPENAI_ENDPOINT: str
-    AZURE_OPENAI_API_KEY: str
-    AZURE_OPENAI_DEPLOYMENT: str
-    
-    # Security
-    SECRET_KEY: str
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
-    
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-    )
-
-
-@lru_cache()
-def get_settings() -> Settings:
-    return Settings()
-
-
-settings = get_settings()
-```
+**Key Patterns:**
+- **Application Initialization**: Use `@asynccontextmanager` with `lifespan` for startup/shutdown
+- **Configuration**: Use Pydantic Settings with `.env` file support
+- **Middleware**: Configure CORS, authentication, logging middleware
+- **Router Organization**: Use `APIRouter` to organize endpoints by domain
+- **Dependency Injection**: Use `Depends()` extensively for services and authentication
+- **API Versioning**: Use path prefixes like `/api/v1/` for version management
 
 ### 5. Dependency Injection Pattern
 
-FastAPI's dependency injection is powerful and should be used extensively:
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `fastapi dependency injection` or `fastapi Depends`
 
-```python
-from fastapi import Depends
-from typing import Annotated
-
-from app.core.config import Settings, get_settings
-from app.repositories.cosmos_repository import CosmosRepository
-
-
-async def get_cosmos_client():
-    """Dependency that provides Cosmos DB client."""
-    settings = get_settings()
-    async with CosmosClient(settings.COSMOS_ENDPOINT, credential=settings.COSMOS_KEY) as client:
-        yield client
-
-
-async def get_repository(
-    client: Annotated[CosmosClient, Depends(get_cosmos_client)]
-) -> CosmosRepository:
-    """Dependency that provides repository instance."""
-    return CosmosRepository(client)
-
-
-# Usage in route
-@router.get("/items/{item_id}")
-async def get_item(
-    item_id: str,
-    repo: Annotated[CosmosRepository, Depends(get_repository)]
-):
-    return await repo.get_item(item_id)
-```
-
-**Key dependency patterns:**
+**Key Patterns:**
 - Use `Depends()` for reusable logic injection
 - Use `yield` in dependencies for setup/teardown (e.g., database connections)
 - Create type aliases with `Annotated` to reduce repetition
@@ -246,354 +128,60 @@ async def get_item(
 
 **Always use Cosmos DB for data persistence**. Use the native async Azure Cosmos DB SDK directly.
 
-#### Repository Pattern Implementation
-
-```python
-from azure.cosmos.aio import CosmosClient
-from azure.cosmos import PartitionKey
-from typing import Any, Optional
-
-
-class CosmosRepository:
-    def __init__(self, client: CosmosClient, database_name: str, container_name: str):
-        self.client = client
-        self.database = client.get_database_client(database_name)
-        self.container = self.database.get_container_client(container_name)
-    
-    async def create_item(self, item: dict[str, Any]) -> dict[str, Any]:
-        """Create a new item in the container."""
-        return await self.container.create_item(body=item)
-    
-    async def get_item(self, item_id: str, partition_key: str) -> Optional[dict[str, Any]]:
-        """Get an item by ID and partition key."""
-        try:
-            return await self.container.read_item(item=item_id, partition_key=partition_key)
-        except Exception:
-            return None
-    
-    async def query_items(self, query: str, parameters: Optional[list] = None) -> list[dict[str, Any]]:
-        """Execute a SQL query and return all results."""
-        items = []
-        async for item in self.container.query_items(
-            query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ):
-            items.append(item)
-        return items
-    
-    async def upsert_item(self, item: dict[str, Any]) -> dict[str, Any]:
-        """Create or update an item."""
-        return await self.container.upsert_item(body=item)
-    
-    async def delete_item(self, item_id: str, partition_key: str) -> None:
-        """Delete an item by ID and partition key."""
-        await self.container.delete_item(item=item_id, partition_key=partition_key)
-
-
-async def initialize_cosmos_database(client: CosmosClient, database_name: str, container_name: str):
-    """Auto-initialize database and container in development."""
-    database = await client.create_database_if_not_exists(id=database_name)
-    await database.create_container_if_not_exists(
-        id=container_name,
-        partition_key=PartitionKey(path="/partition_key")
-    )
+**Installation:**
+```bash
+uv add azure-cosmos azure-identity
 ```
 
-**Cosmos DB Best Practices:**
-- Use async context managers: `async with CosmosClient(...) as client:`
-- Implement repository pattern for data access
-- Use parameterized queries to prevent injection
-- Design partition keys carefully for optimal performance
-- Use bulk operations for batch inserts with controlled concurrency
-- Initialize containers automatically in development mode
-- Handle `CosmosResourceNotFoundError` gracefully
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `azure-cosmos` or `/azure/azure-sdk-for-python`
+- Use Microsoft Docs MCP server: Query `Azure Cosmos DB Python SDK async`
+
+**Key Patterns:**
+- **Repository Pattern**: Implement repository classes for data access abstraction
+- **Async Operations**: All CRUD operations should be async
+- **Client Initialization**: Use `CosmosClient` with async context managers
+- **Parameterized Queries**: Use parameterized SQL queries to prevent injection
+- **Partition Keys**: Design partition keys carefully for optimal performance
+- **Bulk Operations**: Use controlled concurrency for batch operations
+- **Error Handling**: Handle `CosmosResourceNotFoundError` and other exceptions gracefully
 
 ### 7. Realtime & WebSockets
 
-FastAPI has native WebSocket support:
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `fastapi websocket` or `/tiangolo/fastapi`
 
-```python
-from fastapi import WebSocket, WebSocketDisconnect
-
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
-    
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-    
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-    
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-
-manager = ConnectionManager()
-
-
-@app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await manager.broadcast(f"Client {client_id}: {data}")
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client {client_id} disconnected")
-```
-
-**WebSocket Best Practices:**
-- Implement connection manager for multiple clients
-- Use `async for message in websocket.iter_text()` for streaming
-- Handle `WebSocketDisconnect` exception
-- Validate WebSocket messages with Pydantic models
-- Use dependency injection for authentication in WebSocket routes
+**Key Patterns:**
+- **Connection Manager**: Implement a manager class to track active connections
+- **Accept Connections**: Use `await websocket.accept()` to establish connection
+- **Receive/Send Messages**: Use `await websocket.receive_text()` and `send_text()`
+- **Broadcasting**: Iterate over active connections to broadcast messages
+- **Disconnect Handling**: Catch `WebSocketDisconnect` exception for cleanup
+- **Validation**: Use Pydantic models to validate WebSocket messages
+- **Authentication**: Implement WebSocket authentication with query parameters or tokens
 
 ### 8. Agents Integration with Microsoft Agent Framework
 
-**MUST USE Microsoft Agent Framework** for all agent-based applications. Always search Microsoft Docs MCP server for latest patterns before implementing.
+**MUST USE Microsoft Agent Framework** for all agent-based applications.
 
-#### Installation
-
+**Installation:**
 ```bash
-# Install Microsoft Agent Framework
 uv add agent-framework
 ```
 
-#### Basic Agent Creation
+**📚 Getting Code Examples:**
+- **ALWAYS use Context7 MCP server** to retrieve up-to-date code snippets
+- Query Context7 for: `agent-framework`, `Microsoft Agent Framework`, or `/microsoft/agent-framework`
+- Use Microsoft Docs MCP server for official documentation and best practices
 
-```python
-import asyncio
-from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import AzureCliCredential
-
-
-async def main():
-    """Create and run a basic agent."""
-    # Create agent using Azure OpenAI
-    agent = AzureOpenAIChatClient(credential=AzureCliCredential()).create_agent(
-        instructions="You are a helpful assistant that provides accurate information.",
-        name="HelperAgent"
-    )
-    
-    # Run agent with user input
-    result = await agent.run("What are the benefits of async programming in Python?")
-    print(result.text)
-
-
-asyncio.run(main())
-```
-
-#### Agent with Function Tools
-
-```python
-from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import AzureCliCredential
-from typing import Annotated
-
-
-# Define tool functions
-async def search_database(
-    query: Annotated[str, "The search query"]
-) -> Annotated[list[dict], "List of search results"]:
-    """Search the database for items matching the query."""
-    # Implementation here
-    return [{"id": "1", "name": "Result 1"}]
-
-
-async def calculate(
-    expression: Annotated[str, "Mathematical expression to evaluate"]
-) -> Annotated[float, "Calculation result"]:
-    """Perform a mathematical calculation."""
-    # Safe evaluation implementation
-    return eval(expression)
-
-
-async def main():
-    # Create agent with tools
-    agent = AzureOpenAIChatClient(credential=AzureCliCredential()).create_agent(
-        instructions="You are a helpful assistant with access to database search and calculation tools.",
-        name="ToolAgent",
-        tools=[search_database, calculate]
-    )
-    
-    result = await agent.run("Search for items related to Python and calculate 25 * 4")
-    print(result.text)
-
-
-asyncio.run(main())
-```
-
-#### Streaming Responses
-
-```python
-from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import AzureCliCredential
-
-
-async def main():
-    agent = AzureOpenAIChatClient(credential=AzureCliCredential()).create_agent(
-        instructions="You are a helpful assistant.",
-        name="StreamingAgent"
-    )
-    
-    # Stream responses as they're generated
-    async for chunk in agent.run_stream("Tell me a story about Python programming."):
-        print(chunk.text, end="", flush=True)
-
-
-asyncio.run(main())
-```
-
-#### Using Azure AI Foundry Agents
-
-```python
-from agent_framework import HostedCodeInterpreterTool
-from agent_framework.azure import AzureAIAgentClient
-from azure.identity.aio import AzureCliCredential
-
-
-async def main():
-    async with (
-        AzureCliCredential() as credential,
-        AzureAIAgentClient(async_credential=credential).create_agent(
-            name="CodingAgent",
-            instructions="You are a helpful assistant that can write and execute Python code.",
-            tools=HostedCodeInterpreterTool()
-        ) as agent,
-    ):
-        result = await agent.run("Calculate the factorial of 20 using Python code.")
-        print(result.text)
-
-
-asyncio.run(main())
-```
-
-#### Multi-Agent Orchestration
-
-```python
-from agent_framework import WorkflowBuilder
-from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import AzureCliCredential
-
-
-async def main():
-    # Create agents
-    chat_client = AzureOpenAIChatClient(credential=AzureCliCredential())
-    
-    writer_agent = chat_client.create_agent(
-        instructions="You are an excellent content writer. Create and edit content based on feedback.",
-        name="WriterAgent"
-    )
-    
-    reviewer_agent = chat_client.create_agent(
-        instructions="You are a content reviewer. Provide concise, actionable feedback.",
-        name="ReviewerAgent"
-    )
-    
-    # Build workflow
-    builder = WorkflowBuilder()
-    builder.set_start_executor(writer_agent)
-    builder.add_edge(writer_agent, reviewer_agent)
-    workflow = builder.build()
-    
-    # Run workflow
-    result = await workflow.run("Write a blog post about Python async programming")
-    print(result.text)
-
-
-asyncio.run(main())
-```
-
-#### Agent Service Pattern
-
-```python
-from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import AzureCliCredential
-from typing import AsyncGenerator
-
-
-class AgentService:
-    """Service layer for agent operations."""
-    
-    def __init__(self):
-        self.client = AzureOpenAIChatClient(credential=AzureCliCredential())
-        self.agent = None
-    
-    async def initialize(self, instructions: str, name: str, tools: list = None):
-        """Initialize the agent with configuration."""
-        self.agent = self.client.create_agent(
-            instructions=instructions,
-            name=name,
-            tools=tools or []
-        )
-    
-    async def chat(self, message: str) -> str:
-        """Send a message to the agent and get response."""
-        if not self.agent:
-            raise RuntimeError("Agent not initialized")
-        result = await self.agent.run(message)
-        return result.text
-    
-    async def chat_stream(self, message: str) -> AsyncGenerator[str, None]:
-        """Stream agent responses."""
-        if not self.agent:
-            raise RuntimeError("Agent not initialized")
-        async for chunk in self.agent.run_stream(message):
-            yield chunk.text
-
-
-# Usage with FastAPI dependency injection
-from fastapi import Depends
-
-
-async def get_agent_service() -> AgentService:
-    """FastAPI dependency for agent service."""
-    service = AgentService()
-    await service.initialize(
-        instructions="You are a helpful assistant.",
-        name="APIAgent"
-    )
-    return service
-
-
-@router.post("/chat")
-async def chat(
-    message: str,
-    agent_service: AgentService = Depends(get_agent_service)
-):
-    """Chat endpoint using agent service."""
-    response = await agent_service.chat(message)
-    return {"response": response}
-```
-
-#### Converting Agents to Tools
-
-```python
-from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import AzureCliCredential
-
-
-# Create a specialized agent
-weather_agent = AzureOpenAIChatClient(credential=AzureCliCredential()).create_agent(
-    name="WeatherAgent",
-    description="An agent that answers questions about the weather.",
-    instructions="You answer questions about the weather.",
-    tools=[get_weather_function]  # Your weather function
-)
-
-# Convert agent to a tool and use it in another agent
-main_agent = AzureOpenAIChatClient(credential=AzureCliCredential()).create_agent(
-    instructions="You are a helpful assistant.",
-    tools=weather_agent.as_tool()
-)
-```
+**Key Concepts to Explore:**
+- **Basic Agent Creation**: Using `AzureOpenAIChatClient` and `AzureAIAgentClient`
+- **Function Tools**: Integrating custom tools with type annotations
+- **Streaming Responses**: Using `run_stream()` for real-time output
+- **Azure AI Foundry Agents**: Leveraging `HostedCodeInterpreterTool`
+- **Multi-Agent Orchestration**: Building workflows with `WorkflowBuilder`
+- **Agent Service Pattern**: Integrating agents with FastAPI dependency injection
+- **Agent as Tool**: Converting agents to tools using `.as_tool()`
 
 **Microsoft Agent Framework Best Practices:**
 - **Use Azure CLI authentication**: `AzureCliCredential()` for local development
@@ -611,178 +199,52 @@ main_agent = AzureOpenAIChatClient(credential=AzureCliCredential()).create_agent
 
 ### 9. Error Handling & Validation
 
-FastAPI and Pydantic provide excellent error handling:
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `fastapi exception handler` or `python structlog`
 
-```python
-from fastapi import HTTPException, status, Request
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from pydantic import ValidationError
-
-
-# Custom exception
-class ItemNotFoundError(Exception):
-    def __init__(self, item_id: str):
-        self.item_id = item_id
-
-
-# Exception handler
-@app.exception_handler(ItemNotFoundError)
-async def item_not_found_handler(request: Request, exc: ItemNotFoundError):
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={"detail": f"Item {exc.item_id} not found"},
-    )
-
-
-# Validation error handler
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": exc.errors()},
-    )
-
-
-# In routes - use HTTPException
-@router.get("/items/{item_id}")
-async def get_item(item_id: str, repo: Annotated[CosmosRepository, Depends(get_repository)]):
-    item = await repo.get_item(item_id)
-    if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Item {item_id} not found",
-        )
-    return item
-```
-
-**Error Handling Best Practices:**
-- Use `HTTPException` for API errors with proper status codes
-- Create custom exceptions for domain errors
-- Register exception handlers for consistent error responses
-- Pydantic automatically validates request/response data
-- Use `response_model` in routes for response validation
-- Log errors with proper context for debugging
+**Key Patterns:**
+- **Custom Exceptions**: Define application-specific exception classes for domain errors
+- **Exception Handlers**: Use `@app.exception_handler()` for global error handling with consistent response format
+- **HTTP Exceptions**: Use `HTTPException` with appropriate status codes (404, 422, 500, etc.)
+- **Automatic Validation**: Pydantic automatically validates all request/response data via `response_model`
+- **Structured Logging**: Use JSON formatting for logs in production with correlation IDs
+- **Error Context**: Log errors with proper context for debugging and observability
+- **Consistent Responses**: Return standardized error response format across all endpoints
 
 ### 10. Testing Strategy
 
-#### Test Structure
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `pytest-asyncio`, `httpx AsyncClient`, or `fastapi testing`
 
-```python
-# conftest.py - Pytest fixtures
-import pytest
-from fastapi.testclient import TestClient
-from app.main import app
-
-
-@pytest.fixture
-def client():
-    """Test client fixture."""
-    return TestClient(app)
-
-
-@pytest.fixture
-async def async_client():
-    """Async test client fixture."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        yield client
-
-
-@pytest.fixture
-async def mock_cosmos_client():
-    """Mock Cosmos DB client."""
-    # Return mock implementation
-    pass
-
-
-# test_items.py - Unit tests
-import pytest
-from app.models.item import Item
-
-
-@pytest.mark.asyncio
-async def test_create_item(async_client):
-    """Test item creation endpoint."""
-    item_data = {"name": "Test Item", "price": 10.99}
-    response = await async_client.post("/api/v1/items/", json=item_data)
-    assert response.status_code == 201
-    assert response.json()["name"] == "Test Item"
-
-
-def test_get_item_not_found(client):
-    """Test get non-existent item."""
-    response = client.get("/api/v1/items/nonexistent")
-    assert response.status_code == 404
-
-
-# test_integration.py - Integration tests
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_end_to_end_flow(async_client):
-    """Test complete user flow."""
-    # Create item
-    create_response = await async_client.post("/api/v1/items/", json={"name": "Item"})
-    item_id = create_response.json()["id"]
-    
-    # Retrieve item
-    get_response = await async_client.get(f"/api/v1/items/{item_id}")
-    assert get_response.status_code == 200
-    
-    # Delete item
-    delete_response = await async_client.delete(f"/api/v1/items/{item_id}")
-    assert delete_response.status_code == 204
-```
-
-**Testing Best Practices:**
-- Use `pytest` with `pytest-asyncio` for async tests
-- Use `TestClient` for sync tests, `AsyncClient` for async tests
-- Organize tests by feature/domain
-- Use fixtures for dependency injection in tests
-- Mock external services (Cosmos DB, Azure OpenAI)
-- Mark integration tests with `@pytest.mark.integration`
-- Aim for ≥85% code coverage
-- Use `httpx` for testing HTTP requests
-- Test both success and error cases
-- Test validation with invalid inputs
+**Key Patterns:**
+- **Test Structure**: Use pytest fixtures in `conftest.py` for reusable test components
+- **Async Tests**: Use `@pytest.mark.asyncio` for async test functions
+- **Test Client**: Use `httpx.AsyncClient` for testing FastAPI endpoints
+- **Fixtures**: Define reusable fixtures for database, services, and test data
+- **Dependency Overrides**: Use `app.dependency_overrides` to mock dependencies
+- **Mocking**: Use `unittest.mock.AsyncMock` for async functions
+- **Test Database**: Use separate test database or in-memory database
+- **Coverage**: Aim for >80% code coverage with `pytest-cov`
+- **Test Organization**: Organize tests by domain (test_users.py, test_items.py)
+- **Integration Tests**: Mark with `@pytest.mark.integration` for separation
+- **Error Cases**: Test both success and error scenarios including validation failures
 
 ### 11. Observability & Logging
 
-```python
-import logging
-from azure.monitor.opentelemetry import configure_azure_monitor
-from opentelemetry import trace
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `opencensus-ext-azure` or `azure-monitor-opentelemetry`
+- Use Microsoft Docs MCP server: Query `Azure Application Insights Python`
 
-
-# Configure Azure Monitor (Application Insights)
-configure_azure_monitor(
-    connection_string=settings.APPLICATIONINSIGHTS_CONNECTION_STRING,
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-# Instrument FastAPI
-FastAPIInstrumentor.instrument_app(app)
-
-# Get tracer
-tracer = trace.get_tracer(__name__)
-
-
-# Usage in code
-@router.post("/items/")
-async def create_item(item: Item):
-    with tracer.start_as_current_span("create_item") as span:
-        logger.info(f"Creating item: {item.name}")
-        span.set_attribute("item.name", item.name)
-        result = await item_service.create(item)
-        logger.info(f"Item created with ID: {result.id}")
-        return result
-```
+**Key Patterns:**
+- **Azure Application Insights**: Use Azure Monitor OpenTelemetry for distributed tracing
+- **Instrumentation**: Instrument FastAPI with `FastAPIInstrumentor`
+- **Structured Logging**: Use JSON formatting with correlation IDs
+- **Custom Spans**: Create spans for important operations with `tracer.start_as_current_span()`
+- **Metrics**: Track custom metrics (request counts, latency, business metrics)
+- **Health Endpoints**: Implement `/health` and `/health/ready` for monitoring
+- **Correlation IDs**: Include request IDs in logs for end-to-end tracing
+- **Performance Monitoring**: Monitor endpoint latency and throughput
+- **Alerting**: Configure alerts for errors, exceptions, and performance degradation
 
 **Observability Best Practices:**
 - Use Azure Application Insights for telemetry
@@ -798,72 +260,33 @@ async def create_item(item: Item):
 
 ### Pre-commit Hooks Configuration
 
-```yaml
-# .pre-commit-config.yaml
-repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `pre-commit configuration` or `ruff pre-commit` for latest setup
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [pydantic>=2.0.0]
+**Key Tools:**
+- **Ruff**: Fast Python linter and formatter
+- **mypy**: Static type checking
+- **Pre-commit hooks**: Automated checks for trailing whitespace, file endings, YAML syntax
 
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-added-large-files
-```
+### Ruff and Tool Configuration
 
-### Ruff Configuration
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `ruff pyproject.toml` or `pytest configuration` for latest settings
 
-```toml
-# pyproject.toml
-[tool.ruff]
-target-version = "py311"
-line-length = 100
-
-[tool.ruff.lint]
-select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
-]
-ignore = [
-    "E501",  # line too long (handled by formatter)
-    "B008",  # function calls in argument defaults
-]
-
-[tool.ruff.lint.isort]
-known-first-party = ["app"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --tb=short --cov=app --cov-report=term-missing"
-asyncio_mode = "auto"
-```
+**Key Configuration:**
+- **Ruff**: Configure target version, line length, linting rules, and isort behavior
+- **pytest**: Set up test discovery patterns, coverage options, and async mode
+- **mypy**: Enable strict type checking with appropriate warnings
 
 ### Python Environment & Dependency Management with uv
 
 **MUST USE uv** for all Python environment and package management. uv is an extremely fast Python package installer and resolver written in Rust that replaces pip, pip-tools, virtualenv, and pyenv.
 
-#### Installing uv
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `uv` or `/astral-sh/uv` for latest usage patterns
+- Official docs: https://docs.astral.sh/uv/
 
+**Installation:**
 ```bash
 # Windows
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
@@ -872,141 +295,31 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-#### Project Initialization
-
+**Essential Commands:**
 ```bash
-# Create new project with uv
-uv init my-fastapi-project
-cd my-fastapi-project
-
-# Initialize with Python 3.11+
+# Project initialization
+uv init my-project
 uv python install 3.11
 uv venv --python 3.11
-```
 
-#### Managing Dependencies
+# Dependency management
+uv add package-name          # Add production dependency
+uv add --dev package-name    # Add dev dependency
+uv sync                      # Install/sync all dependencies
+uv lock --upgrade            # Update lock file
 
-```bash
-# Add production dependencies
-uv add fastapi
-uv add "uvicorn[standard]"
-uv add pydantic pydantic-settings
-uv add azure-cosmos azure-identity
-uv add agent-framework  # Microsoft Agent Framework
-
-# Add development dependencies
-uv add --dev pytest pytest-asyncio pytest-cov
-uv add --dev httpx
-uv add --dev mypy ruff
-uv add --dev pre-commit
-
-# Install all dependencies
-uv sync
-
-# Update dependencies
-uv lock --upgrade
-```
-
-#### pyproject.toml Configuration
-
-```toml
-[project]
-name = "my-fastapi-project"
-version = "0.1.0"
-description = "FastAPI backend with Microsoft Agent Framework"
-readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.30.0",
-    "pydantic>=2.9.0",
-    "pydantic-settings>=2.5.0",
-    "azure-cosmos>=4.7.0",
-    "azure-identity>=1.17.0",
-    "agent-framework>=0.1.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.3.0",
-    "pytest-asyncio>=0.24.0",
-    "httpx>=0.27.0",
-    "pytest-cov>=5.0.0",
-    "mypy>=1.11.0",
-    "ruff>=0.6.0",
-    "pre-commit>=3.5.0",
-]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.uv]
-dev-dependencies = [
-    "pytest>=8.3.0",
-    "pytest-asyncio>=0.24.0",
-    "httpx>=0.27.0",
-    "pytest-cov>=5.0.0",
-    "mypy>=1.11.0",
-    "ruff>=0.6.0",
-]
-```
-
-#### Running Commands with uv
-
-```bash
-# Run Python scripts
-uv run python app/main.py
-
-# Run uvicorn server
+# Running commands
+uv run python script.py
 uv run uvicorn app.main:app --reload
-
-# Run tests
 uv run pytest
-
-# Run type checking
-uv run mypy app
-
-# Run linting
-uv run ruff check .
-
-# Run formatting
-uv run ruff format .
 ```
 
-#### Docker Integration with uv
-
-```dockerfile
-FROM python:3.11-slim
-
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-WORKDIR /app
-
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync --frozen --no-cache
-
-# Copy application
-COPY ./app ./app
-
-# Run with uv
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-#### uv Best Practices
-
-- **Always use `uv sync`**: Ensure dependencies are installed and up to date
-- **Commit `uv.lock`**: Lock file ensures reproducible builds across environments
-- **Use `uv run`**: Automatically activates virtual environment for command execution
-- **Python version management**: Use `uv python install` to manage Python versions
-- **Fast CI/CD**: uv's speed significantly reduces CI/CD pipeline times
-- **Replace all pip commands**: Use `uv add` instead of `pip install`
-- **Development dependencies**: Use `--dev` flag for dev-only packages
-- **Upgrade packages**: Use `uv lock --upgrade` to update all dependencies
+**Key Practices:**
+- **Commit `uv.lock`**: Ensures reproducible builds
+- **Use `uv run`**: Automatically activates virtual environment
+- **Replace pip**: Use `uv add` instead of `pip install`
+- **Fast CI/CD**: uv significantly reduces pipeline times
+- **Python versions**: Manage with `uv python install`
 
 ## Best Practices Summary
 
@@ -1072,29 +385,16 @@ uv run gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornW
 
 ### Docker Configuration
 
-```dockerfile
-FROM python:3.11-slim
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `uv docker` or `dockerfile python` for latest patterns
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-# Set environment variables
-ENV UV_SYSTEM_PYTHON=1
-
-WORKDIR /app
-
-# Copy dependency files
-COPY pyproject.toml uv.lock* ./
-
-# Install dependencies with uv
-RUN uv sync --frozen --no-cache --no-dev
-
-# Copy application
-COPY ./app ./app
-
-# Run with uv
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
+**Key Patterns:**
+- **Base Image**: Use `python:3.11-slim` for smaller image size
+- **Install uv**: Copy from `ghcr.io/astral-sh/uv:latest`
+- **Multi-stage Builds**: Separate build and runtime stages
+- **Dependencies First**: Copy `pyproject.toml` and `uv.lock` before app code
+- **Layer Caching**: Optimize layer order for faster rebuilds
+- **Run with uv**: Use `uv run` for command execution
 
 ### Azure Deployment Options
 
@@ -1121,46 +421,22 @@ ALLOWED_ORIGINS=["https://yourdomain.com"]
 SECRET_KEY=your-secret-key
 ```
 
-## Continuous Integration Example
+## 5. CI/CD Pipeline Example
 
-```yaml
-# .github/workflows/python-ci.yml
-name: Python CI
+**📚 Getting Code Examples:**
+- Use Context7 MCP server: Query `github actions python` or `azure pipelines python`
+- Use Microsoft Docs MCP server: Query `Azure DevOps Python pipeline`
 
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
-    
-    - name: Install dependencies
-      run: uv sync
-    
-    - name: Lint with Ruff
-      run: uv run ruff check .
-    
-    - name: Type check with mypy
-      run: uv run mypy app
-    
-    - name: Test with pytest
-      run: uv run pytest --cov=app --cov-report=xml
-    
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-```
+**Key Pipeline Steps:**
+1. **Checkout Code**: Use `actions/checkout@v4` or equivalent
+2. **Set up Python**: Install Python 3.11+
+3. **Install uv**: Download and install uv package manager
+4. **Install Dependencies**: Run `uv sync` to install packages
+5. **Linting**: Run `uv run ruff check .`
+6. **Type Checking**: Run `uv run mypy app`
+7. **Testing**: Run `uv run pytest --cov=app --cov-report=xml`
+8. **Coverage Upload**: Upload coverage to Codecov or similar
+9. **Build & Deploy**: Build Docker image and deploy to Azure
 
 ## Learning Resources
 
