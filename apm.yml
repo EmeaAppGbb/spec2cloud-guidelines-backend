@@ -1,0 +1,9 @@
+name: backend-standards
+version: 1.0.0
+description: Backend engineering standards and best practices for spec2cloud projects
+
+author: EmeaAppGbb
+license: MIT
+
+dependencies:
+  apm: []
